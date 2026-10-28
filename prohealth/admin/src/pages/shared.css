@@ -1,0 +1,11 @@
+/* shared table action buttons used across pages */
+.tbl-action {
+  background: none; border: none;
+  font-size: 13px; font-weight: 500;
+  padding: 2px 8px; cursor: pointer;
+}
+.tbl-edit { color: var(--teal); }
+.tbl-del  { color: var(--red); }
+.tbl-edit:hover { text-decoration: underline; }
+.tbl-del:hover  { text-decoration: underline; }
+

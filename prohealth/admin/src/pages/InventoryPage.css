@@ -1,0 +1,35 @@
+.inv-layout {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 24px;
+  align-items: start;
+}
+@media (max-width: 1100px) {
+  .inv-layout { grid-template-columns: 1fr; }
+  .inv-sidebar { order: -1; }
+}
+
+.inv-main { min-width: 0; }
+
+.inv-filters {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.inv-search { flex: 1; min-width: 180px; }
+.inv-filters select { width: 160px; }
+
+.form-section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; }
+
+.tbl-action {
+  background: none; border: none;
+  font-size: 13px; font-weight: 500;
+  padding: 2px 8px; cursor: pointer;
+}
+.tbl-edit { color: var(--teal); }
+.tbl-del  { color: var(--red); }
+.tbl-edit:hover { text-decoration: underline; }
+.tbl-del:hover  { text-decoration: underline; }
+
