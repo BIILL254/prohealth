@@ -34,7 +34,7 @@ design/
   ui-mockups/     10 screens (customer C1-C4, admin A1-A6) as SVG and PNG
 database/
   schema.sql      MySQL 8 script that creates prohealth_db (14 tables)
-frontend/         customer web app (empty for now)
+frontend/         React + TypeScript customer storefront (catalogue in progress)
 admin/            admin panel (empty for now)
 backend/          server code shared by both (empty for now)
 ```
