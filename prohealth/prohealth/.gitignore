@@ -1,0 +1,19 @@
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+# Word lock files
+~$*
+# Secrets and local config (never commit these)
+.env
+*.env
+config.local.*
+# Dependencies and builds
+node_modules/
+vendor/
+dist/
+build/
+*.log
+# Uploaded files while testing
+uploads/
