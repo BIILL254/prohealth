@@ -1,33 +1,65 @@
-import { useState } from 'react'
-
-const INIT_SUPPLIERS = [
-  { name: 'PharmaCo Ltd',     phone: '0700 111 000', email: 'info@pharmaco.co.ke',    address: 'Industrial Area, Nairobi' },
-  { name: 'MediSupply Kenya', phone: '0711 222 333', email: 'orders@medisupply.co.ke', address: 'Tom Mboya St, Nairobi'   },
-  { name: 'HealthBridge',     phone: '0722 333 444', email: 'hb@healthbridge.co.ke',   address: 'Mombasa Rd, Nairobi'     },
-]
+import { useEffect, useState } from 'react'
 
 const EMPTY = { name: '', phone: '', email: '', address: '' }
 
+async function request(path, options) {
+  const response = await fetch(path, options)
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}))
+    throw new Error(result.error || 'The request failed.')
+  }
+  return response.status === 204 ? null : response.json()
+}
+
 export default function SuppliersPage() {
-  const [suppliers, setSuppliers] = useState(INIT_SUPPLIERS)
+  const [suppliers, setSuppliers] = useState([])
   const [form, setForm]           = useState(EMPTY)
   const [editing, setEditing]     = useState(null)
   const [search, setSearch]       = useState('')
+  const [error, setError]         = useState('')
+  const [saving, setSaving]       = useState(false)
+
+  useEffect(() => {
+    request('/api/suppliers')
+      .then(setSuppliers)
+      .catch(err => setError(err.message))
+  }, [])
 
   const filtered = suppliers.filter(s =>
     s.name.toLowerCase().includes(search.toLowerCase()) ||
     s.email.toLowerCase().includes(search.toLowerCase())
   )
 
-  function handleSave() {
-    if (!form.name) return
-    if (editing !== null) {
-      setSuppliers(prev => prev.map((s, i) => i === editing ? { ...form } : s))
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const saved = await request(editing === null ? '/api/suppliers' : `/api/suppliers/${editing}`, {
+        method: editing === null ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      })
+      setSuppliers(prev => editing === null
+        ? [...prev, saved]
+        : prev.map(supplier => supplier.supplierId === editing ? saved : supplier))
       setEditing(null)
-    } else {
-      setSuppliers(prev => [...prev, { ...form }])
+      setForm(EMPTY)
+      setError('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
     }
-    setForm(EMPTY)
+  }
+
+  async function handleDelete(supplier) {
+    if (!window.confirm(`Delete supplier ${supplier.name}?`)) return
+    try {
+      await request(`/api/suppliers/${supplier.supplierId}`, { method: 'DELETE' })
+      setSuppliers(prev => prev.filter(item => item.supplierId !== supplier.supplierId))
+      setError('')
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   return (
@@ -36,6 +68,7 @@ export default function SuppliersPage() {
         <h1>Suppliers</h1>
         <p>Manage medicine suppliers</p>
       </div>
+      {error && <div className="card" role="alert" style={{ marginBottom: 16 }}>{error}</div>}
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 280px', gap: 24, alignItems: 'start' }}>
         <div>
@@ -60,15 +93,15 @@ export default function SuppliersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.map((s, i) => (
-                    <tr key={i}>
+                  {filtered.map(s => (
+                    <tr key={s.supplierId}>
                       <td style={{ fontWeight: 600 }}>{s.name}</td>
                       <td>{s.phone}</td>
                       <td>{s.email}</td>
                       <td>{s.address}</td>
                       <td>
-                        <button className="tbl-action tbl-edit" onClick={() => { setEditing(i); setForm({ ...s }) }}>Edit</button>
-                        <button className="tbl-action tbl-del" onClick={() => setSuppliers(prev => prev.filter((_, j) => j !== i))}>Delete</button>
+                        <button className="tbl-action tbl-edit" onClick={() => { setEditing(s.supplierId); setForm({ name: s.name, phone: s.phone, email: s.email || '', address: s.address || '' }) }}>Edit</button>
+                        <button className="tbl-action tbl-del" onClick={() => handleDelete(s)}>Delete</button>
                       </td>
                     </tr>
                   ))}
@@ -91,8 +124,8 @@ export default function SuppliersPage() {
                 onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} />
             </div>
           ))}
-          <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={handleSave}>
-            Save supplier
+          <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }} onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Save supplier'}
           </button>
           <button className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
             onClick={() => { setForm(EMPTY); setEditing(null) }}>Cancel</button>

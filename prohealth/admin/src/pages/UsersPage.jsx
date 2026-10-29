@@ -1,23 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './UsersPage.css'
-
-const INIT_USERS = [
-  { name: 'Admin User',    email: 'admin@prohealth.co.ke',    phone: '0700 111 222', role: 'Admin',       twofa: 'On',  status: 'Active',    statusClass: 'badge-green',  roleClass: 'badge-purple' },
-  { name: 'Mary Achieng',  email: 'mary@prohealth.co.ke',     phone: '0711 222 333', role: 'Pharmacist',  twofa: 'On',  status: 'Active',    statusClass: 'badge-green',  roleClass: 'badge-teal'   },
-  { name: 'Bill Kundu',    email: 'bill.kundu@strathmore.edu', phone: '0712 345 678', role: 'Customer',   twofa: 'Off', status: 'Active',    statusClass: 'badge-green',  roleClass: 'badge-gray'   },
-  { name: 'Amina Otieno',  email: 'amina@example.com',        phone: '0722 456 789', role: 'Customer',   twofa: 'Off', status: 'Active',    statusClass: 'badge-green',  roleClass: 'badge-gray'   },
-  { name: 'Peter Mwangi',  email: 'peter@example.com',        phone: '0733 567 890', role: 'Customer',   twofa: 'Off', status: 'Suspended', statusClass: 'badge-red',    roleClass: 'badge-gray'   },
-  { name: 'Grace Wanjiru', email: 'grace@example.com',        phone: '0744 678 901', role: 'Customer',   twofa: 'Off', status: 'Active',    statusClass: 'badge-green',  roleClass: 'badge-gray'   },
-]
 
 const ROLES = ['All roles', 'Admin', 'Pharmacist', 'Customer']
 
+async function request(path, options) {
+  const response = await fetch(path, options)
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}))
+    throw new Error(result.error || 'The request failed.')
+  }
+  return response.json()
+}
+
+function toViewUser(user) {
+  const role = user.role[0].toUpperCase() + user.role.slice(1)
+  const active = user.status === 'active'
+  return {
+    ...user,
+    role,
+    twofa: Number(user.twoFactorEnabled) ? 'On' : 'Off',
+    status: active ? 'Active' : 'Suspended',
+    statusClass: active ? 'badge-green' : 'badge-red',
+    roleClass: role === 'Admin' ? 'badge-purple' : role === 'Pharmacist' ? 'badge-teal' : 'badge-gray',
+  }
+}
+
 export default function UsersPage() {
-  const [users, setUsers]   = useState(INIT_USERS)
+  const [users, setUsers]   = useState([])
   const [search, setSearch] = useState('')
   const [roleF, setRoleF]   = useState('All roles')
   const [showModal, setShowModal] = useState(false)
   const [newUser, setNewUser] = useState({ name: '', email: '', phone: '', role: 'Customer', password: '' })
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    request('/api/users')
+      .then(rows => setUsers(rows.map(toViewUser)))
+      .catch(err => setError(err.message))
+  }, [])
 
   const filtered = users.filter(u => {
     const matchSearch = u.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -26,25 +47,40 @@ export default function UsersPage() {
     return matchSearch && matchRole
   })
 
-  function handleRegister() {
-    if (!newUser.name || !newUser.email) return
-    const roleClass = newUser.role === 'Admin' ? 'badge-purple' : newUser.role === 'Pharmacist' ? 'badge-teal' : 'badge-gray'
-    setUsers(prev => [...prev, {
-      ...newUser,
-      twofa: newUser.role !== 'Customer' ? 'On' : 'Off',
-      status: 'Active', statusClass: 'badge-green', roleClass
-    }])
-    setNewUser({ name: '', email: '', phone: '', role: 'Customer', password: '' })
-    setShowModal(false)
+  async function handleRegister() {
+    setSaving(true)
+    try {
+      const created = await request('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newUser),
+      })
+      setUsers(prev => [...prev, toViewUser(created)])
+      setNewUser({ name: '', email: '', phone: '', role: 'Customer', password: '' })
+      setShowModal(false)
+      setError('')
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setSaving(false)
+    }
   }
 
-  function toggleStatus(idx) {
-    setUsers(prev => prev.map((u, i) =>
-      i === idx
-        ? { ...u, status: u.status === 'Active' ? 'Suspended' : 'Active',
-            statusClass: u.status === 'Active' ? 'badge-red' : 'badge-green' }
-        : u
-    ))
+  async function toggleStatus(user) {
+    const status = user.status === 'Active' ? 'suspended' : 'active'
+    try {
+      await request(`/api/users/${user.userId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      setUsers(prev => prev.map(item => item.userId === user.userId
+        ? toViewUser({ ...item, status })
+        : item))
+      setError('')
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   function initials(name) {
@@ -57,6 +93,7 @@ export default function UsersPage() {
         <h1>Users</h1>
         <p>Register users, reset passwords, change roles</p>
       </div>
+      {error && <div className="card" role="alert" style={{ marginBottom: 16 }}>{error}</div>}
 
       <div className="users-filters">
         <input className="form-input users-search" placeholder="Search by name or email"
@@ -82,8 +119,8 @@ export default function UsersPage() {
               </tr>
             </thead>
             <tbody>
-              {filtered.map((u, i) => (
-                <tr key={i}>
+              {filtered.map(u => (
+                <tr key={u.userId}>
                   <td>
                     <div className="user-row">
                       <div className="user-avatar-sm">{initials(u.name)}</div>
@@ -97,8 +134,8 @@ export default function UsersPage() {
                   <td><span className={`badge ${u.statusClass}`}>{u.status}</span></td>
                   <td>
                     <button className="tbl-action tbl-edit">Reset password</button>
-                    <button className="tbl-action tbl-edit" onClick={() => toggleStatus(i)}>
-                      {u.status === 'Active' ? 'Edit' : 'Reactivate'}
+                    <button className="tbl-action tbl-edit" onClick={() => toggleStatus(u)}>
+                      {u.status === 'Active' ? 'Suspend' : 'Reactivate'}
                     </button>
                   </td>
                 </tr>
@@ -143,7 +180,7 @@ export default function UsersPage() {
                 onChange={e => setNewUser(u => ({ ...u, password: e.target.value }))} />
             </div>
             <div className="modal-actions">
-              <button className="btn btn-primary" onClick={handleRegister}>Register</button>
+              <button className="btn btn-primary" onClick={handleRegister} disabled={saving}>{saving ? 'Registering…' : 'Register'}</button>
               <button className="btn btn-outline" onClick={() => setShowModal(false)}>Cancel</button>
             </div>
           </div>

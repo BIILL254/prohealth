@@ -1,29 +1,59 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './InventoryPage.css'
 
-const MEDICINES = [
-  { name: 'Paracetamol 500mg', category: 'Pain relief',  batch: 'P-1180', qty: 240, expiry: '03/2028', price: 120,   status: 'In stock',  statusClass: 'badge-green'  },
-  { name: 'Amoxicillin 250mg', category: 'Antibiotics',  batch: 'B-2291', qty: 34,  expiry: '11/2026', price: 450,   status: 'Expiring',  statusClass: 'badge-orange' },
-  { name: 'Insulin pen',       category: 'Chronic care', batch: 'I-0044', qty: 3,   expiry: '05/2027', price: 1200,  status: 'Low stock', statusClass: 'badge-red'    },
-  { name: 'Vitamin C 1000mg',  category: 'Vitamins',     batch: 'V-3320', qty: 8,   expiry: '09/2027', price: 800,   status: 'Low stock', statusClass: 'badge-red'    },
-  { name: 'Ibuprofen 400mg',   category: 'Pain relief',  batch: 'I-7781', qty: 180, expiry: '01/2028', price: 220,   status: 'In stock',  statusClass: 'badge-green'  },
-  { name: 'Metformin 500mg',   category: 'Chronic care', batch: 'M-5512', qty: 96,  expiry: '08/2027', price: 380,   status: 'In stock',  statusClass: 'badge-green'  },
-  { name: 'Cetirizine 10mg',   category: 'Allergy',      batch: 'C-0912', qty: 52,  expiry: '12/2026', price: 260,   status: 'Expiring',  statusClass: 'badge-orange' },
-  { name: 'Adhesive plasters', category: 'First aid',    batch: 'A-4410', qty: 310, expiry: '06/2029', price: 150,   status: 'In stock',  statusClass: 'badge-green'  },
-]
-
-const CATEGORIES = ['All categories', 'Pain relief', 'Antibiotics', 'Chronic care', 'Vitamins', 'Allergy', 'First aid']
 const STATUSES   = ['All status', 'In stock', 'Low stock', 'Expiring']
 
-const EMPTY_BATCH = { medicine: '', supplier: '', batchNumber: '', quantity: '', costPrice: '', expiryDate: '' }
+const EMPTY_BATCH = { medicineId: '', supplierId: '', batchNumber: '', quantity: '', costPrice: '', expiryDate: '' }
+
+async function request(path, options) {
+  const response = await fetch(path, options)
+  if (!response.ok) {
+    const result = await response.json().catch(() => ({}))
+    throw new Error(result.error || 'The request failed.')
+  }
+  return response.status === 204 ? null : response.json()
+}
+
+function withInventoryStatus(rows) {
+  return rows.map(row => {
+    const daysUntilExpiry = Math.ceil((new Date(row.expiryDate).getTime() - Date.now()) / 86400000)
+    const status = row.qty < row.reorderLevel
+      ? 'Low stock'
+      : daysUntilExpiry <= 30 ? 'Expiring' : 'In stock'
+    return {
+      ...row,
+      qty: Number(row.qty),
+      price: Number(row.price),
+      costPrice: Number(row.costPrice),
+      status,
+      statusClass: status === 'Low stock' ? 'badge-red' : status === 'Expiring' ? 'badge-orange' : 'badge-green',
+    }
+  })
+}
 
 export default function InventoryPage() {
   const [search, setSearch]     = useState('')
   const [category, setCategory] = useState('All categories')
   const [statusF, setStatusF]   = useState('All status')
-  const [items, setItems]       = useState(MEDICINES)
+  const [items, setItems]       = useState([])
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
+  const [loadError, setLoadError] = useState('')
+  const [options, setOptions] = useState({ medicines: [], suppliers: [] })
   const [form, setForm]         = useState(EMPTY_BATCH)
   const [editing, setEditing]   = useState(null) // row index
+
+  useEffect(() => {
+    Promise.all([request('/api/inventory'), request('/api/inventory/options')])
+      .then(([rows, inventoryOptions]) => {
+        setItems(withInventoryStatus(rows))
+        setOptions(inventoryOptions)
+      })
+      .catch(error => setLoadError(error.message))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const categories = ['All categories', ...new Set(items.map(item => item.category))]
 
   const filtered = items.filter(i => {
     const matchSearch   = i.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -33,38 +63,49 @@ export default function InventoryPage() {
     return matchSearch && matchCategory && matchStatus
   })
 
-  function handleDelete(idx) {
-    setItems(prev => prev.filter((_, i) => i !== idx))
+  async function handleDelete(item) {
+    if (!window.confirm(`Delete batch ${item.batch}?`)) return
+    try {
+      await request(`/api/inventory/${item.batchId}`, { method: 'DELETE' })
+      setItems(prev => prev.filter(row => row.batchId !== item.batchId))
+      setLoadError('')
+    } catch (error) {
+      setLoadError(error.message)
+    }
   }
 
-  function handleEdit(idx) {
-    const item = items[idx]
-    setEditing(idx)
+  function handleEdit(item) {
+    setEditing(item.batchId)
     setForm({
-      medicine: item.name, supplier: '', batchNumber: item.batch,
-      quantity: item.qty, costPrice: item.price, expiryDate: item.expiry
+      medicineId: String(item.medicineId), supplierId: String(item.supplierId),
+      batchNumber: item.batch, quantity: item.qty, costPrice: item.costPrice,
+      expiryDate: item.expiryDate,
     })
   }
 
-  function handleSave() {
-    if (editing !== null) {
-      setItems(prev => prev.map((it, i) =>
-        i === editing
-          ? { ...it, name: form.medicine, batch: form.batchNumber, qty: +form.quantity, price: +form.costPrice, expiry: form.expiryDate }
-          : it
-      ))
+  async function handleSave() {
+    setSaving(true)
+    try {
+      const payload = {
+        medicineId: Number(form.medicineId), supplierId: Number(form.supplierId),
+        batchNumber: form.batchNumber, quantity: Number(form.quantity),
+        costPrice: Number(form.costPrice), expiryDate: form.expiryDate,
+      }
+      await request(editing === null ? '/api/inventory' : `/api/inventory/${editing}`, {
+        method: editing === null ? 'POST' : 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const rows = await request('/api/inventory')
+      setItems(withInventoryStatus(rows))
+      setLoadError('')
       setEditing(null)
-    } else {
-      // Add new
-      const qty = +form.quantity
-      const newStatus = qty === 0 ? 'Low stock' : qty < 10 ? 'Low stock' : 'In stock'
-      setItems(prev => [...prev, {
-        name: form.medicine, category: 'General', batch: form.batchNumber,
-        qty, expiry: form.expiryDate, price: +form.costPrice,
-        status: newStatus, statusClass: newStatus === 'In stock' ? 'badge-green' : 'badge-red'
-      }])
+      setForm(EMPTY_BATCH)
+    } catch (error) {
+      setLoadError(error.message)
+    } finally {
+      setSaving(false)
     }
-    setForm(EMPTY_BATCH)
   }
 
   return (
@@ -85,7 +126,7 @@ export default function InventoryPage() {
             onChange={e => setSearch(e.target.value)}
           />
           <select className="form-select" value={category} onChange={e => setCategory(e.target.value)}>
-            {CATEGORIES.map(c => <option key={c}>{c}</option>)}
+            {categories.map(c => <option key={c}>{c}</option>)}
           </select>
           <select className="form-select" value={statusF} onChange={e => setStatusF(e.target.value)}>
             {STATUSES.map(s => <option key={s}>{s}</option>)}
@@ -112,8 +153,11 @@ export default function InventoryPage() {
                 </tr>
               </thead>
               <tbody>
+                {loading && <tr><td colSpan="8">Loading inventory…</td></tr>}
+                {!loading && loadError && <tr><td colSpan="8">{loadError}</td></tr>}
+                {!loading && !loadError && filtered.length === 0 && <tr><td colSpan="8">No inventory batches found.</td></tr>}
                 {filtered.map((item, idx) => (
-                  <tr key={idx}>
+                  <tr key={item.batchId}>
                     <td style={{ fontWeight: 600 }}>{item.name}</td>
                     <td>{item.category}</td>
                     <td>{item.batch}</td>
@@ -122,8 +166,8 @@ export default function InventoryPage() {
                     <td>{item.price}</td>
                     <td><span className={`badge ${item.statusClass}`}>{item.status}</span></td>
                     <td>
-                      <button className="tbl-action tbl-edit" onClick={() => handleEdit(idx)}>Edit</button>
-                      <button className="tbl-action tbl-del"  onClick={() => handleDelete(idx)}>Delete</button>
+                      <button className="tbl-action tbl-edit" onClick={() => handleEdit(item)}>Edit</button>
+                      <button className="tbl-action tbl-del"  onClick={() => handleDelete(item)}>Delete</button>
                     </td>
                   </tr>
                 ))}
@@ -141,13 +185,19 @@ export default function InventoryPage() {
 
         <div className="form-group">
           <label className="form-label">Medicine</label>
-          <input className="form-input" placeholder="Medicine name" value={form.medicine}
-            onChange={e => setForm(f => ({ ...f, medicine: e.target.value }))} />
+          <select className="form-select" value={form.medicineId}
+            onChange={e => setForm(f => ({ ...f, medicineId: e.target.value }))}>
+            <option value="">Select medicine</option>
+            {options.medicines.map(medicine => <option key={medicine.id} value={medicine.id}>{medicine.name}</option>)}
+          </select>
         </div>
         <div className="form-group">
           <label className="form-label">Supplier</label>
-          <input className="form-input" placeholder="Supplier name" value={form.supplier}
-            onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} />
+          <select className="form-select" value={form.supplierId}
+            onChange={e => setForm(f => ({ ...f, supplierId: e.target.value }))}>
+            <option value="">Select supplier</option>
+            {options.suppliers.map(supplier => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
+          </select>
         </div>
         <div className="form-group">
           <label className="form-label">Batch number</label>
@@ -161,18 +211,18 @@ export default function InventoryPage() {
         </div>
         <div className="form-group">
           <label className="form-label">Cost price (KES)</label>
-          <input className="form-input" type="number" min="0" placeholder="0.00" value={form.costPrice}
+          <input className="form-input" type="number" min="0" step="0.01" placeholder="0.00" value={form.costPrice}
             onChange={e => setForm(f => ({ ...f, costPrice: e.target.value }))} />
         </div>
         <div className="form-group">
           <label className="form-label">Expiry date</label>
-          <input className="form-input" placeholder="dd / mm / yyyy" value={form.expiryDate}
+          <input className="form-input" type="date" value={form.expiryDate}
             onChange={e => setForm(f => ({ ...f, expiryDate: e.target.value }))} />
         </div>
 
         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
-          onClick={handleSave}>
-          Save batch
+          onClick={handleSave} disabled={saving || !options.medicines.length || !options.suppliers.length}>
+          {saving ? 'Saving…' : 'Save batch'}
         </button>
         <button className="btn btn-outline" style={{ width: '100%', justifyContent: 'center', marginTop: 8 }}
           onClick={() => { setForm(EMPTY_BATCH); setEditing(null) }}>
