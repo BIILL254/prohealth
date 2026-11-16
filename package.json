@@ -1,0 +1,8 @@
+{
+  "name": "prohealth-workspace",
+  "private": true,
+  "scripts": {
+    "build": "npm run build --prefix prohealth",
+    "server": "npm run dev --prefix prohealth/server"
+  }
+}

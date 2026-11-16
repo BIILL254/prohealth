@@ -1,6 +1,6 @@
 -- ProHealth Online Pharmacy System: MySQL 8 schema (generated from the schema diagram)
-CREATE DATABASE IF NOT EXISTS prohealth_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE prohealth_db;
+CREATE DATABASE IF NOT EXISTS prohealth CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE prohealth;
 
 CREATE TABLE roles (
   role_id INT NOT NULL AUTO_INCREMENT,
@@ -16,6 +16,7 @@ CREATE TABLE users (
   phone VARCHAR(15) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
   two_factor_enabled TINYINT(1) NOT NULL DEFAULT 0,
+  two_factor_secret VARCHAR(64) NULL,
   status ENUM('active','suspended') NOT NULL DEFAULT 'active',
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id),

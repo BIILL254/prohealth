@@ -1,0 +1,9 @@
+# Local configuration and credentials
+**/.env
+**/.env.*
+!**/.env.example
+
+# Generated dependencies and builds
+**/node_modules/
+**/dist/
+**/build/

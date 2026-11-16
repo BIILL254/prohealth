@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: prohealth
+    runtime: node
+    plan: free
+    rootDir: prohealth
+    buildCommand: npm run setup && npm run build
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_NAME
+        value: prohealth
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: MPESA_MODE
+        value: simulate

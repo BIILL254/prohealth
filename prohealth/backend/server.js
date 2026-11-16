@@ -12,7 +12,7 @@ app.use(express.json())
 app.get('/api/health', async (_req, res) => {
   try {
     await pool.query('SELECT 1')
-    res.json({ status: 'ok', database: process.env.DB_NAME || 'prohealth_db' })
+    res.json({ status: 'ok', database: process.env.DB_NAME || 'prohealth' })
   } catch (error) {
     console.error('Database health check failed:', error.message)
     res.status(503).json({ error: 'Database connection failed' })
