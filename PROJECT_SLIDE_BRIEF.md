@@ -155,6 +155,73 @@ Safaricom callback → /api/mpesa/callback
 | Inventory and reporting | Batch stock, FEFO deduction, low/expiry indicators, reports, CSV and audit log | Implemented in code; operational testing should be documented |
 | Security, usability, reliability NFRs | Hashing, prepared statements, CSRF, security headers, sessions, optional TOTP; responsive UI | Core controls present; load/security review still needed |
 
+## Audit against the attached 2026 course guidelines
+
+This checklist distinguishes artifacts found in the project from claims that still need a demonstration, test, or completion. “Present” means the repository contains implementation or documentation evidence; it is not a substitute for instructor acceptance or runtime testing.
+
+### Deliverable 1 — Planning and requirements
+
+| Guideline item | Finding | Status |
+|---|---|---|
+| Project title and system description | ProHealth title and online-pharmacy description are in the requirements document and README. | Present |
+| Group members and assigned tasks | Roles/tasks are drafted, but member names, registration numbers, and group name are placeholders. | Incomplete |
+| Five functional requirements | FR1–FR5 are documented in Deliverable 1. | Present |
+| Three non-functional requirements | NFR1–NFR3 are documented. Performance targets are not backed by load-test evidence. | Present as requirements; unverified in operation |
+
+### Deliverable 2 — Analysis and design
+
+| Guideline item | Finding | Status |
+|---|---|---|
+| Flow chart | Editable draw.io source and two exported flow images are present. | Present |
+| Use case diagram | Source and exported image are present. | Present |
+| Class diagram | Source and exported image are present. | Present |
+| Entity-relationship diagram | Source and exported image are present. | Present |
+| Database schema with attributes, types, keys, and constraints | SQL schema and design documentation are present; the design document names `prohealth_db`, while the active deployment uses `prohealth`. Reconcile the name before final submission. | Present; naming discrepancy to fix |
+| Customer and admin UI mock-ups | Four customer and six admin screen exports and SVGs are present. The README still has a placeholder for the Figma link. | Present; source link incomplete |
+
+### Deliverable 3 — Development and integration
+
+| Guideline item | Finding | Status |
+|---|---|---|
+| Developed database | MySQL-compatible schema/seed scripts exist, and the deployed app is connected to TiDB Cloud. | Present; owner confirmed site works |
+| Front end | React/Vite customer and staff/admin pages are implemented. | Present |
+| Admin panel | Inventory, prescriptions, orders, users, security, reports, and audit screens are implemented in the active client. | Present in code; demonstrate live access |
+| Front end and admin connected to database | Customer and staff APIs share the Express service and database connection. | Present in code; demonstrate core flows |
+
+### Deliverable 4 — Final presentation, testing, deployment, and maintenance
+
+| Guideline criterion | Finding | Status |
+|---|---|---|
+| Normalized database, entities, relationships, cardinalities | 14-table relational schema, foreign keys, uniqueness/check constraints, and ER documentation are present. | Present; ensure design name matches deployed database |
+| Consistent, usable interface | Customer/admin UI and responsive styling are implemented; design mock-ups are available. | Present; usability testing evidence would strengthen it |
+| Add, delete, update, browse, and search | CRUD/search flows exist across catalogue, users, suppliers, inventory, and related admin areas. | Present in code; show examples |
+| Help and clear error messages | Customer Help page, form validation, and API error handling exist. | Present |
+| Main transaction works | Order, payment, prescription, and stock logic are implemented; the owner confirmed the deployed app works. The full payment/stock workflow and live prescription gate still need a recorded acceptance test. | Partially verified |
+| Roles, login/logout, registration, forgotten password | Customer/staff login, registration, logout, and roles exist. Reset tokens exist, but no email service sends the reset link. | Partially complete |
+| Reports with company identity, date, filtering, sorting | Report UI displays pharmacy details and generated date/user; reports can be filtered, sorted, printed, or exported as CSV. Its current brand mark is a generic plus icon, so add the pharmacy's approved logo if the rubric requires a real logo. | Mostly present; logo needs confirmation |
+| Frameworks, libraries, and APIs | React, Express, Bootstrap, Font Awesome, MySQL driver, and Daraja integration are used. | Present |
+| Validation, exception handling, modularity | Server-side validation, route modules, business logic modules, and a central API error handler are present. | Present in code |
+| Creativity/unique features | Prescription review, batch-level stock, FEFO deduction, order tracking, and audit trail support the pharmacy-specific workflow. | Present |
+| Coding practices | Code is split into client/server modules and uses prepared statements. Automated test suite is not present; server test command is only a placeholder. | Partially complete |
+| Live deployment | Render free web service with TiDB Cloud is live at the URL above. | Present; owner confirmed it works |
+| User manual and documentation | Requirements/design docs, deployment guide, Daraja guide, README, and in-app Help exist. A step-by-step customer/staff user manual is not present. | Partially complete |
+| Audit trail | Audit log schema, server audit calls, and admin audit UI exist. | Present in code |
+| Security, including password hashing, prepared queries, and 2FA | Hashing, prepared queries, HTTPS, CSRF, and security headers exist. TOTP is optional rather than enforced for all admin accounts; encryption at rest is not evidenced. | Partially complete |
+| Presentation and project understanding | Requires the team to fill in member details, prepare the demo, and present the flows. | To do |
+
+## Readiness summary
+
+**The project has the main artifacts and a live, functioning demo, but it is not yet fully ready to claim every guideline item is complete.** The highest-priority presentation and release actions are:
+
+1. Fill the team/group placeholders and add the Figma source link.
+2. Add a user manual and a small acceptance-test record for registration/login, OTC checkout, Rx upload/review/payment gate, staff inventory, and report export.
+3. Verify the reported Rx-order behavior against a known Rx-only product and correct live database flags or code as needed.
+4. Connect email delivery for password recovery and stop logging reset tokens.
+5. Decide whether admin 2FA must be mandatory and enforce it if the guideline is interpreted literally.
+6. Reconcile `prohealth_db` vs `prohealth` in documentation and remove stale repository paths.
+7. Review tracked prescription PDFs; use only synthetic data in the demo, slides, and public repository.
+8. Record whether M-Pesa is in simulation or sandbox mode; do not describe live payment as tested unless verified.
+
 ## Design and presentation assets
 
 Use the existing exports where they support the narrative:
