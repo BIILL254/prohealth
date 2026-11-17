@@ -58,24 +58,47 @@ async function autoMigrate() {
     const [tables] = await pool.query("SHOW TABLES LIKE 'roles'");
     if (tables.length === 0) {
       console.log('[DATABASE] First-time setup: Initializing schema and tables...');
-      const schemaFile = path.resolve(config.root, '../database/schema.sql');
-      const seedFile = path.resolve(config.root, '../database/seed.sql');
-      if (fs.existsSync(schemaFile)) {
-        let sql = fs.readFileSync(schemaFile, 'utf8')
+      const schemaCandidates = [
+        path.resolve(config.root, '../database/schema.sql'),
+        path.resolve(config.root, 'database/schema.sql'),
+      ];
+      const schemaFile = schemaCandidates.find(f => fs.existsSync(f));
+
+      const seedCandidates = [
+        path.resolve(config.root, '../database/seed.sql'),
+        path.resolve(config.root, 'database/seed.sql'),
+      ];
+      const seedFile = seedCandidates.find(f => fs.existsSync(f));
+
+      if (schemaFile) {
+        const raw = fs.readFileSync(schemaFile, 'utf8');
+        const clean = raw
+          .replace(/--[^\r\n]*/g, '')
           .replace(/CREATE DATABASE IF NOT EXISTS [^\n;]+;/gi, '')
           .replace(/USE [^\n;]+;/gi, '');
-        await pool.query(sql);
-        console.log('[DATABASE] Schema imported successfully.');
+        const stmts = clean.split(';').map(s => s.trim()).filter(Boolean);
+        for (const stmt of stmts) {
+          await pool.query(stmt);
+        }
+        console.log(`[DATABASE] Schema imported (${stmts.length} statements executed).`);
       }
-      if (fs.existsSync(seedFile)) {
-        let seedSql = fs.readFileSync(seedFile, 'utf8')
+
+      if (seedFile) {
+        const raw = fs.readFileSync(seedFile, 'utf8');
+        const clean = raw
+          .replace(/--[^\r\n]*/g, '')
           .replace(/USE [^\n;]+;/gi, '');
-        await pool.query(seedSql);
-        console.log('[DATABASE] Demo seed data loaded successfully.');
+        const stmts = clean.split(';').map(s => s.trim()).filter(Boolean);
+        for (const stmt of stmts) {
+          await pool.query(stmt);
+        }
+        console.log(`[DATABASE] Seed data loaded (${stmts.length} statements executed).`);
       }
+    } else {
+      console.log('[DATABASE] Database tables already present.');
     }
   } catch (e) {
-    console.error(`\nCould not connect to MySQL: ${e.message}\nCheck the DB_* values in server/.env and that MySQL is running.\n`);
+    console.error(`\n[DATABASE ERROR] ${e.message}\n`);
   }
 }
 await autoMigrate();
