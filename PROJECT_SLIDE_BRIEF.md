@@ -176,7 +176,7 @@ This checklist distinguishes artifacts found in the project from claims that sti
 | Use case diagram | Source and exported image are present. | Present |
 | Class diagram | Source and exported image are present. | Present |
 | Entity-relationship diagram | Source and exported image are present. | Present |
-| Database schema with attributes, types, keys, and constraints | SQL schema and design documentation are present; the design document names `prohealth_db`, while the active deployment uses `prohealth`. Reconcile the name before final submission. | Present; naming discrepancy to fix |
+| Database schema with attributes, types, keys, and constraints | SQL schema and design documentation use the deployed database name `prohealth`. | Present |
 | Customer and admin UI mock-ups | Four customer and six admin screen exports and SVGs are present. The README still has a placeholder for the Figma link. | Present; source link incomplete |
 
 ### Deliverable 3 — Development and integration
@@ -218,7 +218,7 @@ This checklist distinguishes artifacts found in the project from claims that sti
 3. Verify the reported Rx-order behavior against a known Rx-only product and correct live database flags or code as needed.
 4. Connect email delivery for password recovery and stop logging reset tokens.
 5. Decide whether admin 2FA must be mandatory and enforce it if the guideline is interpreted literally.
-6. Reconcile `prohealth_db` vs `prohealth` in documentation and remove stale repository paths.
+6. Remove stale repository paths and placeholders in the README and deliverable documents.
 7. Review tracked prescription PDFs; use only synthetic data in the demo, slides, and public repository.
 8. Record whether M-Pesa is in simulation or sandbox mode; do not describe live payment as tested unless verified.
 
@@ -246,5 +246,5 @@ Use the existing exports where they support the narrative:
 
 - The repository README summarizes the original course project, but contains placeholders and stale folder references.
 - The current service definition is the root `render.yaml`; the live application code is under `prohealth/client` and `prohealth/server`.
-- The design document labels the database `prohealth_db`; the active Render configuration and server default use `prohealth`.
+- The Deliverable 2 design document now uses the active Render database name `prohealth`.
 - This brief describes implemented code separately from intended requirements and highlights items that remain unverified.
