@@ -6,7 +6,7 @@
     "node": "22.x"
   },
   "scripts": {
-    "setup": "npm install --prefix server && npm install --prefix client",
+    "setup": "npm install --prefix server && npm install --prefix client --include=dev",
     "postinstall": "npm run setup",
     "build": "npm run build --prefix client",
     "start": "npm start --prefix server",
