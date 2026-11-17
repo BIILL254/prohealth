@@ -4,10 +4,12 @@ import { fileURLToPath } from 'node:url';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const env = process.env;
+const isRailway = !!(env.RAILWAY_ENVIRONMENT || env.RAILWAY_SERVICE_ID || env.RAILWAY_PROJECT_ID);
+
 let dbConfig = {
-  host: env.DB_HOST || env.MYSQLHOST || '127.0.0.1',
+  host: env.DB_HOST || env.MYSQLHOST || (isRailway ? 'mysql.railway.internal' : '127.0.0.1'),
   port: Number(env.DB_PORT || env.MYSQLPORT || 3306),
-  database: env.DB_NAME || env.MYSQLDATABASE || env.MYSQL_DATABASE || 'prohealth',
+  database: env.DB_NAME || env.MYSQLDATABASE || env.MYSQL_DATABASE || (isRailway ? 'railway' : 'prohealth'),
   user: env.DB_USER || env.MYSQLUSER || 'root',
   password: env.DB_PASS ?? env.MYSQLPASSWORD ?? '',
 };
@@ -18,7 +20,7 @@ if (rawUrl) {
     const u = new URL(rawUrl);
     dbConfig.host = u.hostname;
     dbConfig.port = Number(u.port || 3306);
-    dbConfig.database = env.DB_NAME || u.pathname.replace(/^\//, '') || 'railway';
+    dbConfig.database = env.DB_NAME || u.pathname.replace(/^\//, '') || (isRailway ? 'railway' : 'prohealth');
     dbConfig.user = decodeURIComponent(u.username || 'root');
     dbConfig.password = decodeURIComponent(u.password || '');
   } catch {}

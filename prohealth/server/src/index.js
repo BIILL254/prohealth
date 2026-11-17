@@ -64,6 +64,8 @@ async function autoMigrate() {
         password: config.db.password,
       });
       await tempConn.query(`CREATE DATABASE IF NOT EXISTS \`${config.db.database}\``);
+      await tempConn.query('CREATE DATABASE IF NOT EXISTS `prohealth`');
+      await tempConn.query('CREATE DATABASE IF NOT EXISTS `railway`');
       await tempConn.end();
     } catch (dbErr) {
       console.log('[DATABASE] Notice on ensure DB:', dbErr.message);
