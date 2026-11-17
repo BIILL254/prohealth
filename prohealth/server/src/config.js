@@ -9,6 +9,7 @@ const isRailway = !!(env.RAILWAY_ENVIRONMENT || env.RAILWAY_SERVICE_ID || env.RA
 const rawUrl = env.MYSQL_URL || env.DATABASE_URL;
 const railwayDatabase = env.MYSQLDATABASE || env.MYSQL_DATABASE;
 const defaultDatabase = isRailway ? 'railway' : 'prohealth';
+const dbSsl = env.DB_SSL === 'true' ? { minVersion: 'TLSv1.2' } : undefined;
 
 let dbConfig = {
   // Prefer Railway's service variables; keep DB_* as local/legacy fallbacks.
@@ -17,6 +18,7 @@ let dbConfig = {
   database: railwayDatabase || env.DB_NAME || defaultDatabase,
   user: env.MYSQLUSER || env.DB_USER || 'root',
   password: env.MYSQLPASSWORD ?? env.DB_PASS ?? '',
+  ssl: dbSsl,
 };
 
 if (rawUrl) {
@@ -39,6 +41,7 @@ if (rawUrl) {
     database: urlDatabase || railwayDatabase || env.DB_NAME || defaultDatabase,
     user: decodeURIComponent(u.username || env.MYSQLUSER || env.DB_USER || 'root'),
     password: decodeURIComponent(u.password || env.MYSQLPASSWORD || env.DB_PASS || ''),
+    ssl: dbSsl,
   };
 }
 

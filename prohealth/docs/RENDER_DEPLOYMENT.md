@@ -5,21 +5,23 @@ This repository uses a React/Vite client, an Express server and MySQL. The Rende
 ## Before deploying
 
 - Push the project to the GitHub branch you want Render to deploy.
-- Arrange a MySQL 8 database that Render can reach. The app's current MySQL database on your PC/phpMyAdmin at `localhost` is not reachable from Render. Render's guide deploys MySQL as a private service with a persistent disk; it is self-managed rather than a managed MySQL database product. See [Render's MySQL deployment guide](https://render.com/docs/deploy-mysql).
-- Decide whether to import existing records or start with an empty database. Never run `seed.sql` against a database containing records you need; it clears/replaces demo data.
+- For an all-free demo, create an external TiDB Cloud Starter instance in MySQL-compatible mode. It has a free monthly quota (currently 5 GiB row storage and 50 million request units); requests beyond the quota are throttled until reset unless you enable paid usage. TiDB requires TLS on public connections. See [TiDB's plan limits](https://docs.pingcap.com/tidbcloud/select-cluster-tier/?compatibility=mysql&plan=starter) and [TLS instructions](https://docs.pingcap.com/tidbcloud/secure-connections-to-serverless-clusters/).
+- Alternatively, run MySQL on Render. Render deploys it as a private service with a persistent disk, which is paid and self-managed rather than a managed MySQL product. See [Render's MySQL deployment guide](https://render.com/docs/deploy-mysql).
+- Keep in mind that a Render Free web service sleeps after 15 minutes without traffic. Traffic from Render to an external TiDB database counts toward Render's outbound bandwidth allowance. See [Render Free service limits](https://render.com/docs/free).
+- Use a new, empty database named `prohealth` for a clean demo. Do not copy Railway variables into Render.
 - Replace any Daraja credentials that were shared in screenshots. The deployment starts in payment simulation mode until fresh sandbox credentials are entered in Render's Environment settings.
 
 ## Create the Render web service
 
 The repository-root `render.yaml` defines the web service. In Render, choose **New > Blueprint**, connect this GitHub repository, and deploy the Blueprint. Render uses `prohealth/` as the service root, runs `npm run setup && npm run build`, and starts the server with `npm start`.
 
-The Blueprint asks for `DB_HOST`, `DB_USER` and `DB_PASS`. Enter the host/address, username and password for the hosted MySQL database. Keep `DB_NAME=prohealth`. Use the database's internal host if it runs in the same Render workspace. Render provides the service `PORT`; do not set it manually.
+The Blueprint asks for `DB_HOST`, `DB_PORT`, `DB_SSL`, `DB_USER` and `DB_PASS`. For TiDB, copy the host, port and username exactly from TiDB's Connect dialog, set `DB_SSL=true`, and use `DB_NAME=prohealth`. TiDB usernames include the cluster prefix shown in its Connect dialog. For MySQL hosted in Render, use its internal host, port `3306`, and `DB_SSL=false`. Keep the web service and a Render-hosted MySQL service in the same region. Render provides the web service `PORT`; do not set it manually.
 
-The app has a `/healthz` check that only reports healthy when MySQL is reachable. If the deploy does not pass the health check, check the database host, port, credentials, firewall/network access and that `database/schema.sql` has been imported.
+The app has a `/healthz` check that only reports healthy when the database is reachable. If the deploy does not pass the health check, check the database host, port, credentials, TLS setting and network access.
 
-## Import the database
+## Database initialization
 
-Create an empty MySQL 8 database, then import `database/schema.sql`. This creates the tables and roles. Import `database/seed.sql` only if you deliberately want its demo records in the empty database. If you need current local records, export them from phpMyAdmin and import that backup instead; do not overwrite them with the demo seed.
+On a new empty database, the app imports `database/schema.sql` and then `database/seed.sql` at startup. The seed file adds demo users and catalog data. Do not run it against a database containing records you need; it truncates tables. If you need existing local records, export them from phpMyAdmin and import that backup into the hosted database before starting the app.
 
 ## Configure M-Pesa after the site is live
 
