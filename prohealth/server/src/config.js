@@ -15,6 +15,7 @@ export const config = {
   maxLoginAttempts: 5,
   lockoutMinutes: 15,
   db: {
+    uri: env.MYSQL_URL || env.DATABASE_URL || undefined,
     host: env.DB_HOST || env.MYSQLHOST || '127.0.0.1',
     port: Number(env.DB_PORT || env.MYSQLPORT || 3306),
     database: env.DB_NAME || env.MYSQLDATABASE || 'prohealth',
