@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
+import mysql from 'mysql2/promise';
 import { config } from './config.js';
 import { pool } from './db.js';
 import { csrfGuard } from './auth.js';
@@ -54,6 +55,21 @@ app.use((err, req, res, next) => {
 
 async function autoMigrate() {
   try {
+    // 1. Ensure the target database exists on MySQL server
+    try {
+      const tempConn = await mysql.createConnection({
+        host: config.db.host,
+        port: config.db.port,
+        user: config.db.user,
+        password: config.db.password,
+      });
+      await tempConn.query(`CREATE DATABASE IF NOT EXISTS \`${config.db.database}\``);
+      await tempConn.end();
+    } catch (dbErr) {
+      console.log('[DATABASE] Notice on ensure DB:', dbErr.message);
+    }
+
+    // 2. Test pool connectivity
     await pool.query('SELECT 1');
     const [tables] = await pool.query("SHOW TABLES LIKE 'roles'");
     if (tables.length === 0) {
