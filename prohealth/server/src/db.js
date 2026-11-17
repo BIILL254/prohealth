@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { config } from './config.js';
 
-export const pool = mysql.createPool({ ...config.db, waitForConnections: true, connectionLimit: 10, timezone: '+03:00', dateStrings: true, decimalNumbers: true });
+export const pool = mysql.createPool({ ...config.db, multipleStatements: true, waitForConnections: true, connectionLimit: 10, timezone: '+03:00', dateStrings: true, decimalNumbers: true });
 const txStore = new AsyncLocalStorage(); // inside a transaction every query uses the same connection
 const conn = () => txStore.getStore() ?? pool;
 

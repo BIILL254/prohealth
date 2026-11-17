@@ -52,5 +52,31 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Something went wrong on our side. Please try again.' });
 });
 
-try { await pool.query('SELECT 1'); } catch (e) { console.error(`\nCould not connect to MySQL: ${e.message}\nCheck the DB_* values in server/.env and that MySQL is running.\n`); }
+async function autoMigrate() {
+  try {
+    await pool.query('SELECT 1');
+    const [tables] = await pool.query("SHOW TABLES LIKE 'roles'");
+    if (tables.length === 0) {
+      console.log('[DATABASE] First-time setup: Initializing schema and tables...');
+      const schemaFile = path.resolve(config.root, '../database/schema.sql');
+      const seedFile = path.resolve(config.root, '../database/seed.sql');
+      if (fs.existsSync(schemaFile)) {
+        let sql = fs.readFileSync(schemaFile, 'utf8')
+          .replace(/CREATE DATABASE IF NOT EXISTS [^\n;]+;/gi, '')
+          .replace(/USE [^\n;]+;/gi, '');
+        await pool.query(sql);
+        console.log('[DATABASE] Schema imported successfully.');
+      }
+      if (fs.existsSync(seedFile)) {
+        let seedSql = fs.readFileSync(seedFile, 'utf8')
+          .replace(/USE [^\n;]+;/gi, '');
+        await pool.query(seedSql);
+        console.log('[DATABASE] Demo seed data loaded successfully.');
+      }
+    }
+  } catch (e) {
+    console.error(`\nCould not connect to MySQL: ${e.message}\nCheck the DB_* values in server/.env and that MySQL is running.\n`);
+  }
+}
+await autoMigrate();
 app.listen(config.port, '0.0.0.0', () => console.log(`ProHealth running on port ${config.port}`));
