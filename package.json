@@ -1,8 +1,12 @@
 {
   "name": "prohealth-workspace",
   "private": true,
+  "type": "module",
   "scripts": {
-    "build": "npm run build --prefix prohealth",
+    "setup": "npm install --prefix prohealth/server && npm install --prefix prohealth/client",
+    "postinstall": "npm run setup",
+    "build": "npm run build --prefix prohealth/client",
+    "start": "npm start --prefix prohealth/server",
     "server": "npm run dev --prefix prohealth/server"
   }
 }
