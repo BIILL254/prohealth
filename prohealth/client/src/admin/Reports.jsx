@@ -30,7 +30,7 @@ export default function Reports() {
         <div className="col"><button className="btn btn-primary">Generate</button></div></div></form>
       <ErrorBox error={error} />{loading && !data ? <Spinner /> : data && (
         <div className="card"><div className="card-body">
-          <div className="report-head"><span className="brand-mark"><i className="fa-solid fa-plus" /></span> <strong>{ph.name}</strong><br />{ph.address} &middot; {ph.phone}</div>
+          <div className="report-head"><img className="report-logo" src="/prohealth-mark.svg" alt="ProHealth pharmacy mark" /><div><strong>{ph.name}</strong><br />{ph.address} &middot; {ph.phone}</div></div>
           <div className="d-flex justify-content-between flex-wrap mb-3 align-items-start"><div><h2 className="h5 mb-0">{data.title}</h2>
             <small className="text-muted">{data.from ? `${fmtDate(data.from, false)} to ${fmtDate(data.to, false)} · ` : ''}Generated {fmtDate(new Date().toISOString().slice(0, 16).replace('T', ' '))} by {data.generatedBy}</small></div>
             <div className="d-print-none"><a className="btn btn-outline-secondary btn-sm me-1" href={`/api/admin/reports${qs({ ...params, sort: data.sort, dir: data.dir, export: 'csv' })}`}><i className="fa-solid fa-file-csv me-1" />CSV</a>

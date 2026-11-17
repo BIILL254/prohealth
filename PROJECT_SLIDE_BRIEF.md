@@ -198,7 +198,7 @@ This checklist distinguishes artifacts found in the project from claims that sti
 | Help and clear error messages | Customer Help page, form validation, and API error handling exist. | Present |
 | Main transaction works | Order, payment, prescription, and stock logic are implemented; the owner confirmed the deployed app works. The full payment/stock workflow and live prescription gate still need a recorded acceptance test. | Partially verified |
 | Roles, login/logout, registration, forgotten password | Customer/staff login, registration, logout, and roles exist. Reset tokens exist, but no email service sends the reset link. | Partially complete |
-| Reports with company identity, date, filtering, sorting | Report UI displays pharmacy details and generated date/user; reports can be filtered, sorted, printed, or exported as CSV. Its current brand mark is a generic plus icon, so add the pharmacy's approved logo if the rubric requires a real logo. | Mostly present; logo needs confirmation |
+| Reports with company identity, date, filtering, sorting | Report UI displays pharmacy details and generated date/user; reports can be filtered, sorted, printed, or exported as CSV. A project-created capsule mark now replaces the generic plus in the report header; replace it with an official logo if the pharmacy supplies one. | Present; official logo optional |
 | Frameworks, libraries, and APIs | React, Express, Bootstrap, Font Awesome, MySQL driver, and Daraja integration are used. | Present |
 | Validation, exception handling, modularity | Server-side validation, route modules, business logic modules, and a central API error handler are present. | Present in code |
 | Creativity/unique features | Prescription review, batch-level stock, FEFO deduction, order tracking, and audit trail support the pharmacy-specific workflow. | Present |
@@ -214,7 +214,7 @@ This checklist distinguishes artifacts found in the project from claims that sti
 **The project has the main artifacts and a live, functioning demo, but it is not yet fully ready to claim every guideline item is complete.** The highest-priority presentation and release actions are:
 
 1. Fill the team/group placeholders and add the Figma source link.
-2. Add a user manual and a small acceptance-test record for registration/login, OTC checkout, Rx upload/review/payment gate, staff inventory, and report export.
+2. Use `prohealth/docs/ACCEPTANCE_TEST_PLAN.md` to record a manual acceptance run; add a customer/staff user manual.
 3. Verify the reported Rx-order behavior against a known Rx-only product and correct live database flags or code as needed.
 4. Connect email delivery for password recovery and stop logging reset tokens.
 5. Decide whether admin 2FA must be mandatory and enforce it if the guideline is interpreted literally.
@@ -231,6 +231,7 @@ Use the existing exports where they support the narrative:
 - **Staff screens:** `prohealth/design/ui-mockups/png/admin_1_login_2fa.png` through `admin_6_users.png`.
 - **Source documents:** `prohealth/docs/deliverable-1/ProHealth_Deliverable1_Requirements.docx`, `prohealth/docs/deliverable-2/ProHealth_Deliverable2_Design_Document.docx`.
 - **Deployment notes:** `prohealth/docs/RENDER_DEPLOYMENT.md` and `prohealth/docs/MPESA_DARAJA_SETUP.md`.
+- **Acceptance testing:** `prohealth/docs/ACCEPTANCE_TEST_PLAN.md`.
 
 ## Facts to verify before presenting
 

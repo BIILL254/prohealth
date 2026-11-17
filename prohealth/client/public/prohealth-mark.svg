@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">ProHealth pharmacy mark</title>
+  <rect x="2" y="2" width="60" height="60" rx="17" fill="#0F766E"/>
+  <g transform="rotate(-38 32 32)">
+    <rect x="17" y="23" width="30" height="18" rx="9" fill="#FFFFFF"/>
+    <path d="M32 23h6a9 9 0 0 1 0 18h-6z" fill="#A7F3D0"/>
+    <path d="M32 23v18" stroke="#0B3B38" stroke-width="2"/>
+  </g>
+</svg>
