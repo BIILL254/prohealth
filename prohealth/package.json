@@ -6,6 +6,7 @@
   },
   "scripts": {
     "setup": "npm install --prefix server && npm install --prefix client",
+    "postinstall": "npm run setup",
     "build": "npm run build --prefix client",
     "start": "npm start --prefix server",
     "dev:server": "npm run dev --prefix server",

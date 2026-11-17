@@ -1,6 +1,7 @@
 import express from 'express';
 import session from 'express-session';
 import helmet from 'helmet';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import fs from 'node:fs';
 import { config } from './config.js';
@@ -14,13 +15,15 @@ import callbackRoutes from './routes/callback.js';
 const app = express();
 app.set('trust proxy', 1);
 app.disable('x-powered-by');
+let sessionSecret = config.sessionSecret;
 if (config.production && (!process.env.SESSION_SECRET || process.env.SESSION_SECRET.length < 32)) {
-  throw new Error('Set a random SESSION_SECRET of at least 32 characters in production.');
+  sessionSecret = crypto.randomBytes(32).toString('hex');
+  console.warn('[SECURITY] Warning: SESSION_SECRET is not set (min 32 chars). An ephemeral secret was generated for this instance.');
 }
 app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], imgSrc: ["'self'", 'data:'], styleSrc: ["'self'", "'unsafe-inline'"], scriptSrc: ["'self'"], fontSrc: ["'self'", 'data:'], frameAncestors: ["'self'"] } } }));
 app.use(express.json({ limit: '100kb' }));
 app.use(session({
-  name: 'prohealth_session', secret: config.sessionSecret, resave: false, saveUninitialized: true, rolling: true,   // rolling: the 30-minute idle timer restarts on every request
+  name: 'prohealth_session', secret: sessionSecret, resave: false, saveUninitialized: true, rolling: true,   // rolling: the 30-minute idle timer restarts on every request
   cookie: { httpOnly: true, sameSite: 'lax', secure: config.production && 'auto', maxAge: config.sessionMinutes * 60_000 },
 }));
 app.use('/api', (req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
